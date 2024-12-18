@@ -70,6 +70,10 @@ func (c *Workflow) Compress() error {
 		return fmt.Errorf("cannot determine source object size: %v", err)
 	}
 
+	if c.dstObjectExists() {
+		return fmt.Errorf("destination object exists already")
+	}
+
 	bytesProcessed, err := (func() (int64, error) {
 		dstWriter := c.dstObject.NewWriter(ctx)
 		defer dstWriter.Close()
@@ -108,6 +112,11 @@ func (c *Workflow) Compress() error {
 	log.Printf("%s - '%s' - compressed %d bytes to %d bytes in %s/%s. Compression ratio %.2f", c.getWorkerName(), c.srcObject.ObjectName(), bytesProcessed, dstObjectAttrs.Size, c.dstObject.BucketName(), c.dstObject.ObjectName(), compressionRatio)
 
 	return nil
+}
+
+func (c *Workflow) dstObjectExists() bool {
+	_, err := c.dstObject.Attrs(c.ctx)
+	return err == nil
 }
 
 func (c *Workflow) Delete() error {
