@@ -1,0 +1,9 @@
+**/build
+.git
+.gitignore
+test
+build*.sh
+Dockerfile
+.dockerignore
+.env
+.aws
