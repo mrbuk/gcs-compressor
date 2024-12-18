@@ -30,6 +30,12 @@ resource "google_service_account" "default" {
   display_name = "Service Account"
 }
 
+resource "google_project_iam_member" "log_writer" {
+  project = var.project_id
+  role    = "roles/logging.logWriter"
+  member  = "serviceAccount:${google_service_account.default.email}"
+}
+
 // Source Bucket
 
 data "google_storage_bucket" "source" {
