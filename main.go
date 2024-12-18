@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"runtime"
 	"strings"
+	"time"
 
 	"cloud.google.com/go/pubsub"
 	"github.com/mrbuk/gcs-compressor/core"
@@ -81,7 +82,7 @@ func main() {
 	}
 
 	// event driven
-	client, err := pubsub.NewClient(ctx, projectId)
+	pubSubClient, err := pubsub.NewClient(ctx, projectId)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -97,28 +98,15 @@ func main() {
 		go worker(ctx, w, jobs)
 	}
 
-	// catch SIGINT and properly cancel and cleanup
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-
+	c := shutdownSignal(cancel, jobs)
 	defer func() {
 		signal.Stop(c)
-		cancel()
-	}()
-	go func() {
-		select {
-		case <-c:
-			// close PubSub Connection
-			client.Close()
-			cancel()
-			// close all job channels
-			close(jobs)
-		case <-ctx.Done():
-		}
+		close(jobs)
+		pubSubClient.Close()
 	}()
 
 	log.Printf("subscribing to '%s'\n", subscription)
-	sub := client.Subscription(subscription)
+	sub := pubSubClient.Subscription(subscription)
 	log.Printf("waiting for messages on '%s'\n", subscription)
 	err = sub.Receive(ctx, func(_ context.Context, msg *pubsub.Message) {
 		bucketId := msg.Attributes["bucketId"]
@@ -170,25 +158,44 @@ func worker(ctx context.Context, id int, jobs <-chan string) {
 		lctx := context.WithValue(ctx, core.WorkerName, workerName)
 
 		log.Printf("%s - '%s' compressing from bucket / '%s' -> bucket '%s' / '%s'", workerName, objectId, sourceBucketName, destinationBucketName, objectId)
-		wf, err := core.NewWorkflow(lctx, compressionLevel, sourceBucketName, objectId, destinationBucketName, objectId)
-		if err != nil {
-			log.Printf("%s - '%s' failed with error with storage client: %v", workerName, objectId, err)
-			return
-		}
-		defer wf.Close()
+		func() {
+			wf, err := core.NewWorkflow(lctx, compressionLevel, sourceBucketName, objectId, destinationBucketName, objectId)
+			if err != nil {
+				log.Printf("%s - '%s' failed with error with storage client: %v", workerName, objectId, err)
+				return
+			}
+			defer wf.Close()
 
-		err = wf.Compress()
-		if err != nil {
-			log.Printf("%s - '%s' failed with error compressing object: %v", workerName, objectId, err)
-			return
-		}
+			err = wf.Compress()
+			if err != nil {
+				log.Printf("%s - '%s' failed with error compressing object: %v", workerName, objectId, err)
+				return
+			}
 
-		err = wf.Delete()
-		if err != nil {
-			log.Printf("%s - '%s' failed with error deleting source object: %v", workerName, objectId, err)
-			return
-		}
-
-		log.Printf("%s - finished job for %s\n", workerName, objectId)
+			err = wf.Delete()
+			if err != nil {
+				log.Printf("%s - '%s' failed with error deleting source object: %v", workerName, objectId, err)
+				return
+			}
+			log.Printf("%s - finished job for %s\n", workerName, objectId)
+		}()
 	}
+}
+
+func shutdownSignal(cancel context.CancelFunc, jobs chan string) chan<- os.Signal {
+	// catch SIGINT and properly cancel and cleanup
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+
+	go func() {
+		// block until SIGINT is received
+		sig := <-c
+		signal.Stop(c)
+		log.Printf("received signal %v", sig)
+		log.Printf("waiting 30s before stopping - issue another signal to kill immediatlely")
+		time.Sleep(30 * time.Second)
+		cancel()
+	}()
+
+	return c
 }
