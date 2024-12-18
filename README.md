@@ -10,8 +10,7 @@ You can run `gcs-compressor` in two modes:
 The application is written in Go and can either be run 
 
 as a binary
-
-    ```
+    
     $ ./build.sh
 
     # mode 1 - interactive - copy a specifc file
@@ -29,11 +28,9 @@ as a binary
         -destinationBucket gcs-compression-destination-1f34 \
         -subscription object-notifier-compressor -projectId dev-demo-333610 
 
-    ```
 
 or via Docker
 
-    ```
     # mode 1 - interactive - copy a specifc file
     $ docker run -it mrbuk/gcs-compressor:0.1 \ 
         -compressionLevel 1 \   #  0 = NoCompression, 1 = BestSpeed ... 9 = BestCompression, -1 = DefaultCompression
@@ -48,7 +45,6 @@ or via Docker
         -sourceBucket gcs-compression-source-1f34 \
         -destinationBucket gcs-compression-destination-1f34 \
         -subscription object-notifier-compressor -projectId dev-demo-333610 
-    ```
 
 **Important:** PubSub Messages are acknowledged right before the compression operation starts. 
 This is due to the fact that compressing a single file can take longer than the current existing ACK Deadline. 
@@ -71,7 +67,6 @@ Instead the recommendation is to run `gcs-compressor` via a Container directly i
 
 The follwoing `gcloud` command will deploy an instance using COS in `europe-west4` pulling the container image from Docker Hub:
 
-    ```
     $ gcloud compute instances create-with-container gcs-compressor-main \
         --project=${GCP_PROJECT_ID} \
         --zone=europe-west4-c \
@@ -98,6 +93,5 @@ The follwoing `gcloud` command will deploy an instance using COS in `europe-west
         --shielded-integrity-monitoring \
         --labels=goog-ec-src=vm_add-gcloud,container-vm=cos-stable-117-18613-75-72 \
         --threads-per-core=1
-    ```
 
 Alternativly take a look at the Terrform code in `infrastructure` to deploy.
