@@ -42,7 +42,7 @@ func init() {
 func main() {
 	// check for required values
 	if sourceBucketName == "" || destinationBucketName == "" {
-		fmt.Fprintf(flag.CommandLine.Output(), "error: -sourceBucketName and -destinationBucketName are required\n\n")
+		fmt.Fprintf(flag.CommandLine.Output(), "error: -sourceBucket and -destinationBucket are required\n\n")
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
@@ -56,6 +56,14 @@ func main() {
 
 	if destinationObjectName == "" {
 		destinationObjectName = sourceObjectName
+	}
+
+	if sourceBucketName == destinationBucketName && sourceObjectName == destinationObjectName {
+		fmt.Fprintf(flag.CommandLine.Output(),
+			"error:	when using the same -sourceBucket and -destinationBucket, -subscription cannot be used.\n"+
+				"	when using the same -sourceBucket and -destinationBucket, -destinationObjectName must be different from -sourceObjectName\n\n")
+		flag.PrintDefaults()
+		os.Exit(1)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
