@@ -106,7 +106,7 @@ func main() {
 		go worker(ctx, w, jobs)
 	}
 
-	c := shutdownSignal(cancel, jobs)
+	c := shutdownSignal(cancel)
 	defer func() {
 		signal.Stop(c)
 		close(jobs)
@@ -190,7 +190,7 @@ func worker(ctx context.Context, id int, jobs <-chan string) {
 	}
 }
 
-func shutdownSignal(cancel context.CancelFunc, jobs chan string) chan<- os.Signal {
+func shutdownSignal(cancel context.CancelFunc) chan<- os.Signal {
 	// catch SIGINT and properly cancel and cleanup
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
