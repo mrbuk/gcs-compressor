@@ -60,6 +60,7 @@ EOF
         - -sourceBucket=${data.google_storage_bucket.source.name}
         - -destinationBucket=${data.google_storage_bucket.destination.name}
         - -subscription=${google_pubsub_subscription.default.name}
+        - -topic=${google_pubsub_topic.default.name}
         - -projectId=${var.project_id}
         stdin: false
         tty: false

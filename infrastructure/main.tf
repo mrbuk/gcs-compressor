@@ -72,7 +72,13 @@ resource "google_pubsub_topic_iam_member" "gcs_serivce_account" {
   member = "serviceAccount:${data.google_storage_project_service_account.gcs_account.email_address}"
 }
 
-resource "google_pubsub_subscription_iam_member" "default_service_account" {
+resource "google_pubsub_topic_iam_member" "default_service_account_publisher" {
+  topic  = google_pubsub_topic.default.id
+  role   = "roles/pubsub.publisher"
+  member = "serviceAccount:${google_service_account.default.email}"
+}
+
+resource "google_pubsub_subscription_iam_member" "default_service_account_subscriber" {
   subscription = google_pubsub_subscription.default.name
   role         = "roles/pubsub.subscriber"
   member       = "serviceAccount:${google_service_account.default.email}"
