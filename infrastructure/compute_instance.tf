@@ -1,3 +1,16 @@
+data "template_file" "cloud-config" {
+  template = file("${path.module}/cloud-init.yaml")
+
+  vars = {
+    image             = "mrbuk/gcs-compressor:0.1"
+    sourceBucket      = data.google_storage_bucket.source.name
+    destinationBucket = data.google_storage_bucket.destination.name
+    subscription      = google_pubsub_subscription.default.name
+    topic             = google_pubsub_topic.default.name
+    projectId         = var.project_id
+  }
+}
+
 resource "google_compute_instance" "gcs-compressor-main" {
   name         = "gcs-compressor-main-${random_id.suffix.hex}"
   machine_type = "n2-custom-16-8192"
@@ -13,9 +26,9 @@ resource "google_compute_instance" "gcs-compressor-main" {
 
   tags = ["ssh"]
 
-  advanced_machine_features {
-    threads_per_core = 1
-  }
+  # advanced_machine_features {
+  #   threads_per_core = 1
+  # }
 
   network_interface {
     subnetwork = "default"
@@ -50,24 +63,7 @@ EOF
 
   metadata = {
     enable-oslogin            = "true"
-    gce-container-declaration = <<EOF
-    spec:
-      containers:
-      - name: gcs-compressor-main
-        image: mrbuk/gcs-compressor:0.1
-        args:
-        - -compressionLevel=1
-        - -sourceBucket=${data.google_storage_bucket.source.name}
-        - -destinationBucket=${data.google_storage_bucket.destination.name}
-        - -subscription=${google_pubsub_subscription.default.name}
-        - -topic=${google_pubsub_topic.default.name}
-        - -projectId=${var.project_id}
-        stdin: false
-        tty: false
-        restartPolicy: Always
-        # This container declaration format is not public API and may change without notice. Please
-        # use gcloud command-line tool or Google Cloud Console to run Containers on Google Compute Engine."
-    EOF
+    user-data                 = data.template_file.cloud-config.rendered
     google-logging-enabled    = "true"
     google-monitoring-enabled = "true"
   }

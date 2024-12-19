@@ -1,0 +1,45 @@
+#cloud-config
+
+write_files:
+- path: /etc/default/docker
+  permissions: "0644"
+  owner: root
+  content: |
+    DOCKER_OPTS="--registry-mirror=https://mirror.gcr.io"
+    
+- path: /var/lib/docker/daemon.json
+  permissions: "0644"
+  owner: root
+  content: |
+    {
+      "live-restore": true,
+      "storage-driver": "overlay2",
+      "log-opts": {
+        "max-size": "1024m"
+      }
+    }
+
+# nginx container service
+- path: /etc/systemd/system/gcs-compressor.service
+  permissions: "0644"
+  owner: root
+  content: |
+    [Unit]
+    Description=Start proxy container
+    After=gcr-online.target docker.socket
+    Wants=gcr-online.target docker.socket docker-events-collector.service
+    [Service]
+    ExecStart=/usr/bin/docker run --name=gcs-compressor \
+      --restart unless-stopped \
+      --network host \
+      ${image} \
+      -sourceBucket=${sourceBucket} \
+      -destinationBucket=${destinationBucket} \
+      -subscription=${subscription} \
+      -topic=${topic} \
+      -projectId=${projectId}
+    ExecStop=sh -c "/usr/bin/docker stop gcs-compressor && /usr/bin/docker rm gcs-compressor"
+
+runcmd:
+- systemctl daemon-reload
+- systemctl restart gcs-compressor
