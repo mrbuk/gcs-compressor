@@ -3,6 +3,8 @@ resource "google_compute_instance" "gcs-compressor-main" {
   machine_type = "n2-custom-16-8192"
   zone         = var.zone
 
+  allow_stopping_for_update = true
+
   boot_disk {
     initialize_params {
       image = "cos-cloud/cos-stable"
@@ -10,6 +12,10 @@ resource "google_compute_instance" "gcs-compressor-main" {
   }
 
   tags = ["ssh"]
+
+  advanced_machine_features {
+    threads_per_core = 1
+  }
 
   network_interface {
     subnetwork = "default"
