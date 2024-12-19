@@ -64,13 +64,13 @@ func Compress(w http.ResponseWriter, r *http.Request) {
 	}
 	defer wf.Close()
 
-	err = wf.Compress()
+	err = wf.Compress(ctx)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err = wf.Delete()
+	err = wf.Delete(ctx)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
