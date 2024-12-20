@@ -1,0 +1,3 @@
+#!/bin/sh
+mkdir -p build
+go build -o build -gcflags "all=-N -l" -v ./...
