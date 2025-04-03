@@ -2,7 +2,7 @@ data "template_file" "cloud-config" {
   template = file("${path.module}/cloud-init.yaml")
 
   vars = {
-    image             = "mrbuk/gcs-compressor:0.1"
+    image             = "mrbuk/gcs-compressor:0.2"
     sourceBucket      = data.google_storage_bucket.source.name
     destinationBucket = data.google_storage_bucket.destination.name
     subscription      = google_pubsub_subscription.default.name

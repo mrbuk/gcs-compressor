@@ -34,7 +34,7 @@ as a binary
 or via Docker
 
     # mode 1 - interactive - copy a specifc file
-    $ docker run -it mrbuk/gcs-compressor:0.1 \ 
+    $ docker run -it mrbuk/gcs-compressor:0.2 \ 
         -compressionLevel 1 \   #  0 = NoCompression, 1 = BestSpeed ... 9 = BestCompression, -1 = DefaultCompression
         -sourceBucket gcs-compression-source-1f34 \
         -sourceObjectName "100m.txt" \
@@ -42,7 +42,7 @@ or via Docker
         -destinationObjectName "100m-new.txt" # provide another filename in case you want to write to the same bucket
 
     # mode 2 - event-driven - listen for events on subscription 'object-notifier-compressor'
-    $ docker run mrbuk/gcs-compressor:0.1  \ 
+    $ docker run mrbuk/gcs-compressor:0.2  \ 
         -compressionLevel 1 \   #  0 = NoCompression, 1 = BestSpeed ... 9 = BestCompression, -1 = DefaultCompression
         -sourceBucket gcs-compression-source-1f34 \
         -destinationBucket gcs-compression-destination-1f34 \
